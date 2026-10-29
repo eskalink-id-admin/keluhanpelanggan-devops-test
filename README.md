@@ -1,167 +1,136 @@
-## Bahan technical test DevOps
+# Technical Test DevOps — Mini CI/CD
 
-Panduan aplikasi, fitur pengujian deployment, dan skenario branch `feature/*`, `qa`,
-serta `master` tersedia di [docs/DEVOPS-LAB.md](docs/DEVOPS-LAB.md).
-Kandidat berfokus pada pipeline CI/CD; fitur aplikasi sudah disediakan.
-Bagian soal web developer di bawah merupakan referensi proyek lama, bukan tugas kandidat DevOps.
+Repository ini menyediakan aplikasi Laravel 12 dengan PHP 8.4 untuk menguji kemampuan
+kandidat membangun pipeline CI/CD sampai deployment QA, Production, dan rollback.
+Fitur aplikasi sudah tersedia; kandidat berfokus pada otomasi delivery aplikasi.
 
-## **Petunjuk Pengunaan**
-Proyek ini menggunakan framework [Laravel 12](https://laravel.com/docs/12.x/deployment#server-requirements) dan paket pengembangan antarmuka [***laravel/ui***](https://github.com/laravel/ui) yang siap digunakan. Untuk keperluan tes keahlian web developer kali ini, Anda boleh menggunakan salah satu dari 2 cara pengembangan full-stack laravel, berikut ini pilihan yang kami bolehkan:
-- Laravel + Blade atau
-- Laravel + Vue.js 
+## Ruang lingkup
 
-### **Software pendukung yang perlu disiapkan sebelum memulai**
+Buat pipeline dengan tahapan validasi, test, build, packaging, deployment, dan
+verifikasi. Gunakan satu platform CI/CD yang dikuasai, seperti Jenkins, GitLab CI/CD,
+atau GitHub Actions. Deployment boleh menggunakan Docker maupun langsung ke server.
 
-- PHP minimal versi 8.4 dengan ekstensi Laravel, termasuk PDO dan driver database yang digunakan
-- Composer 2 versi terbaru
-- NodeJS minimal versi 16 atau versi terbaru
-- Git minimal versi 2 atau versi terbaru (Optional)
+Dua environment boleh dijalankan pada satu mesin dengan port/container terpisah.
+Tidak wajib menggunakan cloud berbayar, Kubernetes, atau tools tambahan yang rumit.
 
-#
-## **Github Repository**
+## Pembagian peran dan branch
 
-### **Clone Repository atau Download ZIP**
+Penguji berperan sebagai developer: menyiapkan branch, perubahan aplikasi, push,
+serta PR/MR dan merge saat demonstrasi. Kandidat tidak perlu membuat branch fitur
+atau mengembangkan fitur bisnis. Kandidat menyiapkan konfigurasi CI/CD dan script
+pendukung yang diperlukan.
 
-- Clone via Git Bash (Windows) atau Terminal (Linux)
-  ```
-  git clone https://github.com/eskalink-id/keluhanpelanggan-testdev.git
-  ```
-  Setelah selesai clone, pada Command line arahkan ke folder **keluhanpelanggan-testdev**, seperti perintah berikut:
-  ```
-  cd keluhanpelanggan-testdev
-  ```
-- atau **Download ZIP** jika anda tidak memiliki git di lokal komputer anda, untuk mendownload klik tombol Download ZIP seperti pada gambar berikut:
+| Branch | Pemicu | Hasil yang diharapkan |
+| --- | --- | --- |
+| `feature/*` | Push atau pembaruan PR/MR ke `qa` | Validasi dan test; tanpa deployment |
+| `qa` | Perubahan digabungkan ke `qa` | Test/build berhasil, lalu deployment QA otomatis |
+| `master` | Perubahan digabungkan ke `master` | Test/build berhasil, lalu deployment Production melalui approval/manual |
 
-  ![image](https://user-images.githubusercontent.com/116535942/199644260-9be931e5-7f71-482c-8b52-7a5f918bd8b0.png)
+Penguji menyiapkan `master` sebagai baseline versi `1.0.0`, membuat `qa` dari
+`master`, lalu menyiapkan perubahan pada `feature/banner` dari `qa`.
+Branch selain `master` tidak boleh melakukan deployment ke Production.
 
-  setelah download selesai, extract zip ke folder yang anda inginkan
+QA dan Production harus memiliki konfigurasi, database, storage, dan alamat akses
+terpisah. Pertahankan `APP_KEY` pada setiap environment. Gunakan `APP_ENV=qa` untuk
+QA serta `APP_ENV=production` dan `APP_DEBUG=false` untuk Production.
 
-- Kemudian lakukan instalasi laravel dan npm, seperti **Panduan Instalasi** dibawah ini
+## Fitur aplikasi yang disediakan
 
+- Registrasi, login, dan logout.
+- Dashboard `/deployment` dengan badge environment, versi, branch, commit, dan build.
+- Catatan per pengguna untuk memverifikasi data setelah deployment dan rollback.
+- Perintah `release:stamp` untuk mencatat identitas artifact.
+- Simulasi rilis bermasalah yang membuat readiness gagal.
 
-----
+| Endpoint | Fungsi |
+| --- | --- |
+| `GET /health` | Liveness; HTTP 200 ketika aplikasi hidup |
+| `GET /ready` | Readiness; HTTP 200 jika siap, HTTP 503 jika pemeriksaan gagal |
+| `GET /version` | Identitas rilis dan environment aktif |
 
+Gunakan `/ready` sebagai pemeriksaan setelah deployment. Registrasi, login, dan
+aset frontend tetap perlu diperiksa saat demo.
 
-### **Validasi upgrade PHP 8.4 / Laravel 12**
+## Menjalankan aplikasi
 
-Pastikan `php -v` dan runtime PHP web server sama-sama menggunakan PHP 8.4.
-Instal dependensi dari `composer.lock` menggunakan `composer install`, lalu jalankan:
+Prasyarat: PHP 8.4 beserta ekstensi Laravel dan driver PDO, Composer 2, Node.js/npm,
+serta MySQL atau SQLite. Pengujian otomatis membutuhkan ekstensi `pdo_sqlite`.
+Pastikan perintah `php` menggunakan PHP 8.4; jika menggunakan alias `php84`, sesuaikan
+perintah di bawah.
+
+Untuk instalasi baru:
 
 ```sh
-composer check-platform-reqs
-php artisan test
-php artisan route:list
+composer install
+php -r "file_exists('.env') || copy('.env.example', '.env');"
+php artisan key:generate
 ```
 
-Pengujian memakai SQLite in-memory (ekstensi `pdo_sqlite`) agar tidak mengubah database
-aplikasi. PHPUnit dikonfigurasi gagal jika ada deprecation atau warning.
-Struktur aplikasi berbasis Kernel dan service provider tetap didukung Laravel 12.
-Migration token Sanctum sudah tersedia di proyek; tidak perlu memublikasikan ulang.
+Atur koneksi database dan `APP_URL` di `.env`, lalu jalankan:
 
-### **Panduan Instalasi**
+```sh
+php artisan migrate
+npm ci
+npm run build
+php artisan serve
+```
 
-- Buka Command Line arahkan ke folder ***keluhanpelanggan-testdev***
-- kemudian jalankan perintah:
-  ```
-  composer install
-  ```
-- selanjutnya, jalankan perintah:
-  ```
-  php -r "copy('.env.example', '.env');";
-  ```
-- selanjutnya, jalankan perintah:
-  ```
-  php artisan key:generate
-  ```
-- selanjutnya, buat database dengan nama ***keluhan_pelanggan***
-- selanjutnya, sesuaikan parameter pada file **.env**, seperti berikut:
-  ```
-  APP_URL=http://localhost:8000
+Buka `/register`, login, lalu akses `/deployment`. Buat catatan sebelum melakukan
+pengujian deployment. Panduan untuk database lama dan detail konfigurasi tersedia
+pada [Deployment Lab](docs/DEVOPS-LAB.md).
 
-  DB_CONNECTION=mysql
-  DB_HOST=127.0.0.1
-  DB_PORT=3306
-  DB_DATABASE=keluhan_pelanggan
-  DB_USERNAME=root
-  DB_PASSWORD=
-  ```
-- selanjutnya, jalankan perintah:
-  ```
-  php artisan migrate
-  ```
-- selanjutnya, jalankan perintah berikut untuk compiled assets (development):
-  ```
-  - npm install
-  - npm run dev
-  ```
-- selanjutnya, buka command line yang baru, jalankan perintah:
-  ```
-  php artisan serve
-  ```
+## Validasi dan packaging
 
-- selanjutnya, buka browser dengan url [http://localhost:8000](http://localhost:8000)
-- selanjutnya, klik link **Register** dan lengkapi isian pada form register
-- Selamat melanjutkan Tes, dengan membaca ketentuan pada **Soal Tes Keahlian**
+```sh
+composer validate --strict
+composer check-platform-reqs
+php artisan test
+npm run build
+```
 
-----
+Test memakai `.env.testing` dan SQLite in-memory. Kegagalan test harus menghentikan
+pipeline sebelum deployment.
 
-## **Soal Tes Keahlian**
+Saat build, isi identitas rilis menggunakan metadata CI:
 
-1. Buat Model, migration, dan seeder sebanyak 50 record untuk struktur table sebagai berikut:
-   ```
-   Nama Tabel: keluhan_pelanggan
-   Struktur Tabel:
-   -------------------------------------------------------------------------------------------------
-   | Column Name    | Type Data | Length | Note                                                    |
-   -------------------------------------------------------------------------------------------------
-   | id             | bigint    |        | not null, primary key, autoincrement                    |
-   | nama           | varchar   | 50     | not null, min length 3                                  |
-   | email          | varchar   | 100    | not null                                                |
-   | nomor_hp       | varchar   | 15     | null, numeric only                                      |
-   | status_keluhan | varchar   | 1      | not null default 'O' [0:Received, 1:In Process, 2: Done]|
-   | keluhan        | varchar   | 255    | not null, min length 50                                 |
-   | created_at     | datetime  |        | not null                                                |
-   -------------------------------------------------------------------------------------------------
+```sh
+php artisan release:stamp qa COMMIT_SHA BUILD_NUMBER
+```
 
-   Nama Table: keluhan_status_his
-   Struktur Table:
-   -------------------------------------------------------------------------------------------------
-   | Column Name    | Type Data | Length | Note                                                    |
-   -------------------------------------------------------------------------------------------------
-   | id             | bigint    |        | not null, primary key, autoincrement                    |
-   | keluhan_id     | bigint    |        | not null, foreign key to keluhan_pelanggan.id           |
-   | status_keluhan | varchar   | 1      | not null  [0:Received, 1:In Process, 2: Done]           |
-   | updated_at     | datetime  |        | not null                                                |
-   -------------------------------------------------------------------------------------------------
-   ```
+Ganti `qa` sesuai branch sumber. Sertakan `release.json` yang dihasilkan dalam
+artifact/image bersama source aplikasi, dependensi runtime, dan `public/build`.
+Jangan sertakan `.env`, secret, database, `public/hot`, atau config cache mesin build.
+Bangun config cache menggunakan konfigurasi server tujuan.
 
-2. Pada halaman Keluhan Pelanggan buat fungsi create, read, update, delete (CRUD), dan history data keluhan, menggunakan axios atau ajax.
-   Pada fungsi History data keluhan, munculkan informasi timeline data keluhan dari sejak data di create s.d status terakhir secara kronologis.
-   
-3. Buat Controller dengan nama KeluhanPelangganController untuk proses CRUD.
-   Setiap keluhan baru & perubahan status atas keluhan tsb, history data tersimpan di table keluhan_status_his.
+## Skenario demonstrasi
 
-4. Ketika melakukan create dan update data berikan validasi sesuai dengan atribute table, contoh:
-    - field nama, jika diisi lebih dari 50 digit, maka tampilkan error message: text too long, maximum 50 characters.
-    - field nomor_hp, jika diisi dengan huruf/spasi/karakter khusus, maka tampilkan error: input numeric only.
-    - dst.
-    
-5. Buat fungsi export file untuk mengenerate data dari table keluhan_pelanggan agar bisa di download kedalam format file:
-    - .txt (library maatwebsite/excel)
-    - .csv (library maatwebsite/excel)
-    - .xls (library maatwebsite/excel)
-    - .pdf (library dompdf/dompdf atau maatwebsite/excel)
+1. **Baseline:** deploy versi `1.0.0`, daftar akun, dan simpan catatan.
+2. **Feature ke QA:** penguji menyediakan perubahan versi/pesan pada `feature/banner`,
+   lalu merge ke `qa`. Tunjukkan pipeline dan deployment QA otomatis.
+3. **QA ke Production:** penguji merge ke `master`. Tunjukkan approval/manual sebelum
+   deployment Production dan identitas artifact yang aktif.
+4. **Test gagal:** penguji menyediakan perubahan versi tidak valid. Pipeline harus
+   gagal tanpa mengganti versi aplikasi yang sedang aktif.
+5. **Readiness gagal:** penguji menyediakan rilis dengan simulasi kegagalan. Pipeline
+   harus mendeteksi HTTP 503 dan mempertahankan atau memulihkan rilis sehat sebelumnya.
+6. **Rollback setelah sukses:** jalankan satu job/perintah rollback ke artifact sukses
+   sebelumnya. Versi kembali, readiness 200, login berhasil, dan catatan tetap tersedia.
 
-6. Buat 1 halaman menu dashboard yang menyajikan summary data keluhan pelanggan yang sudah diinput dengan ketentuan:
-    - pie chart berisi persentase total data keluhan pelanggan by status (Received, In Process, Done) di table keluhan_pelanggan
-    - column/bar chart berisi jumlah keluhan berdasarkan status keluhan selama 6 bulan terakhir dari table keluhan_status_his.
-    - table view berisi data top 10 keluhan dengan umur keluhan paling lama (umur keluhan dihitung dari pertama kali data di create s.d current date)
-    - Referensi dashboard: https://1drv.ms/x/s!AsNatlBKVuH5rACl8DLrzW_QmmJ_?e=YrV3gx&nav=MTVfe0VBNDg4NDZGLTRBMUQtN0Q0NS04OERDLTMwOEM1MjUzMDNBRX0
+Rollback harus memakai artifact yang sudah tersedia tanpa membangun ulang source.
+Jangan mereset database atau menggunakan `migrate:fresh`. Rollback database otomatis
+bukan persyaratan; jelaskan penanganan migration yang tidak kompatibel.
 
-7. Buat RestAPI fungsi crud untuk melakukan:
-    - update status by id keluhan
-    - delete status by id keluhan
+Detail simulasi dan perintah tersedia di [docs/DEVOPS-LAB.md](docs/DEVOPS-LAB.md).
 
-8. Buat unit test untuk salah satu fungsi crud.
-   
-**Selamat mengerjakan, semoga sukses**
+## Output yang dikumpulkan
+
+- Konfigurasi pipeline beserta script deployment dan rollback.
+- Dockerfile/Compose jika digunakan dan contoh konfigurasi tanpa secret.
+- Dokumentasi prasyarat, arsitektur singkat, variabel konfigurasi, serta cara deploy
+  dan rollback yang dapat diulang oleh penguji.
+- Bukti eksekusi seluruh skenario berupa log, tautan build, atau rekaman demo.
+- Penjelasan singkat asumsi, keterbatasan, dan strategi migration database.
+
+Penilaian berfokus pada pipeline yang berjalan, pemetaan branch/environment yang
+benar, deployment yang dapat ditelusuri, pemulihan kegagalan, data persisten,
+dan dokumentasi yang jelas.
