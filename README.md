@@ -34,6 +34,13 @@ QA dan Production harus memiliki konfigurasi, database, storage, dan alamat akse
 terpisah. Pertahankan `APP_KEY` pada setiap environment. Gunakan `APP_ENV=qa` untuk
 QA serta `APP_ENV=production` dan `APP_DEBUG=false` untuk Production.
 
+## Perubahan rilis 1.2.0
+
+Branch `feature/banner` menambahkan banner **Pembaruan aplikasi** pada dashboard
+`/deployment`, dengan badge versi aktif dan pesan rilis baru. Banner mengikuti artifact
+ketika dipromosikan ke `qa-master` dan `master`; rollback ke `1.1.0` menghilangkan
+banner tersebut. Tidak ada perubahan database atau konfigurasi environment.
+
 ## Perubahan rilis 1.1.0
 
 Branch `qa-master` menambahkan ringkasan total catatan milik pengguna pada dashboard,

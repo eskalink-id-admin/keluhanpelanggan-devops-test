@@ -9,6 +9,13 @@
         </div>
         <span class="badge fs-6 {{ $release['environment'] === 'production' ? 'bg-danger' : ($release['environment'] === 'qa' ? 'bg-warning text-dark' : 'bg-primary') }}">{{ strtoupper($release['environment']) }}</span>
     </div>
+    <div class="alert alert-info d-flex flex-wrap align-items-center gap-3" role="status">
+        <span class="badge bg-primary">Baru · {{ $release['version'] }}</span>
+        <div>
+            <strong>Pembaruan aplikasi</strong>
+            <div>Ringkasan dan catatan Anda kini tampil dalam satu dashboard.</div>
+        </div>
+    </div>
     <div class="card mb-4">
         <div class="card-header">Rilis {{ $release['version'] }}</div>
         <div class="card-body">

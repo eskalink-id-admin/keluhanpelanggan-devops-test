@@ -2,8 +2,8 @@
 
 // Source-controlled changes for feature branches. Build metadata travels with the artifact.
 return array_replace([
-    'version' => '1.1.0',
-    'message' => 'Rilis 1.1.0: ringkasan catatan tersedia untuk verifikasi deployment.',
+    'version' => '1.2.0',
+    'message' => 'Rilis 1.2.0: banner informasi pembaruan tersedia di dashboard.',
     'simulate_failure' => false,
     'branch' => 'local',
     'commit' => 'untracked',
