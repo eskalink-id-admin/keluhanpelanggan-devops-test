@@ -24,6 +24,13 @@
             <div class="mt-3"><a href="/health">Health</a> · <a href="/ready">Readiness</a> · <a href="/version">Version JSON</a></div>
         </div>
     </div>
+    <div class="card mb-4">
+        <div class="card-body">
+            <h2 class="h5">Ringkasan catatan</h2>
+            <p class="fs-4 mb-1"><strong>{{ $notes->total() }}</strong> catatan tersimpan</p>
+            <p class="text-muted mb-0">Total seluruh catatan Anda, termasuk yang ada di halaman berikutnya.</p>
+        </div>
+    </div>
     <div class="card">
         <div class="card-header">Catatan saya</div>
         <div class="card-body">

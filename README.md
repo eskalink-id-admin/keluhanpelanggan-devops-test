@@ -22,17 +22,23 @@ pendukung yang diperlukan.
 
 | Branch | Pemicu | Hasil yang diharapkan |
 | --- | --- | --- |
-| `feature/*` | Push atau pembaruan PR/MR ke `qa` | Validasi dan test; tanpa deployment |
-| `qa` | Perubahan digabungkan ke `qa` | Test/build berhasil, lalu deployment QA otomatis |
+| `feature/*` | Push atau pembaruan PR/MR ke `qa-master` | Validasi dan test; tanpa deployment |
+| `qa-master` | Perubahan digabungkan ke `qa-master` | Test/build berhasil, lalu deployment QA otomatis |
 | `master` | Perubahan digabungkan ke `master` | Test/build berhasil, lalu deployment Production melalui approval/manual |
 
-Penguji menyiapkan `master` sebagai baseline versi `1.0.0`, membuat `qa` dari
-`master`, lalu menyiapkan perubahan pada `feature/banner` dari `qa`.
+Penguji menyiapkan `master` sebagai baseline versi `1.0.0`, membuat `qa-master` dari
+`master`, lalu menyiapkan perubahan pada `feature/banner` dari `qa-master`.
 Branch selain `master` tidak boleh melakukan deployment ke Production.
 
 QA dan Production harus memiliki konfigurasi, database, storage, dan alamat akses
 terpisah. Pertahankan `APP_KEY` pada setiap environment. Gunakan `APP_ENV=qa` untuk
 QA serta `APP_ENV=production` dan `APP_DEBUG=false` untuk Production.
+
+## Perubahan rilis 1.1.0
+
+Branch `qa-master` menambahkan ringkasan total catatan milik pengguna pada dashboard,
+pesan rilis baru, dan pemetaan branch QA. Tidak ada perubahan schema database.
+Saat rollback ke baseline `1.0.0`, ringkasan baru hilang dan data catatan tetap tersedia.
 
 ## Fitur aplikasi yang disediakan
 
@@ -84,20 +90,23 @@ pada [Deployment Lab](docs/DEVOPS-LAB.md).
 ```sh
 composer validate --strict
 composer check-platform-reqs
+php artisan config:clear
 php artisan test
 npm run build
 ```
 
-Test memakai `.env.testing` dan SQLite in-memory. Kegagalan test harus menghentikan
+Test memakai `.env.testing` dan SQLite in-memory. Suite berhenti sebelum migration jika
+config cache masih aktif atau konfigurasi database testing tidak sesuai.
+Kegagalan test harus menghentikan
 pipeline sebelum deployment.
 
 Saat build, isi identitas rilis menggunakan metadata CI:
 
 ```sh
-php artisan release:stamp qa COMMIT_SHA BUILD_NUMBER
+php artisan release:stamp qa-master COMMIT_SHA BUILD_NUMBER
 ```
 
-Ganti `qa` sesuai branch sumber. Sertakan `release.json` yang dihasilkan dalam
+Ganti `qa-master` sesuai branch sumber. Sertakan `release.json` yang dihasilkan dalam
 artifact/image bersama source aplikasi, dependensi runtime, dan `public/build`.
 Jangan sertakan `.env`, secret, database, `public/hot`, atau config cache mesin build.
 Bangun config cache menggunakan konfigurasi server tujuan.
@@ -106,7 +115,7 @@ Bangun config cache menggunakan konfigurasi server tujuan.
 
 1. **Baseline:** deploy versi `1.0.0`, daftar akun, dan simpan catatan.
 2. **Feature ke QA:** penguji menyediakan perubahan versi/pesan pada `feature/banner`,
-   lalu merge ke `qa`. Tunjukkan pipeline dan deployment QA otomatis.
+   lalu merge ke `qa-master`. Tunjukkan pipeline dan deployment QA otomatis.
 3. **QA ke Production:** penguji merge ke `master`. Tunjukkan approval/manual sebelum
    deployment Production dan identitas artifact yang aktif.
 4. **Test gagal:** penguji menyediakan perubahan versi tidak valid. Pipeline harus

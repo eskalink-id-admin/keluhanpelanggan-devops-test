@@ -41,8 +41,8 @@ Instalasi baru untuk kandidat tetap menjalankan seluruh migration secara normal.
 
 | Branch sumber | Environment target | Perilaku pipeline yang dibuat kandidat |
 | --- | --- | --- |
-| `feature/*` | Tidak wajib deploy; opsional `preview` | Validasi dan test pada PR/MR ke `qa` |
-| `qa` | `APP_ENV=qa` | Deploy otomatis setelah test/build berhasil |
+| `feature/*` | Tanpa deployment | Validasi dan test pada PR/MR ke `qa-master` |
+| `qa-master` | `APP_ENV=qa` | Deploy otomatis setelah test/build berhasil |
 | `master` | `APP_ENV=production` | Deploy dengan approval/manual |
 
 Gunakan database, storage, URL, secret, dan config cache terpisah untuk QA dan
@@ -60,7 +60,7 @@ jawab pipeline. Aplikasi tidak menjalankan Git atau memilih server berdasarkan b
 Saat build, jalankan perintah berikut menggunakan metadata dari CI:
 
 ```sh
-php artisan release:stamp qa COMMIT_SHA BUILD_NUMBER
+php artisan release:stamp qa-master COMMIT_SHA BUILD_NUMBER
 ```
 
 Contoh lain:
@@ -76,8 +76,8 @@ server ketika melakukan rollback. Tanpa stamping, aplikasi menampilkan branch/bu
 `local` dan commit `untracked`.
 
 Versi dan pesan default ada di `config/release.php`. `--release-version` opsional;
-metadata artifact mengalahkan versi default tersebut. Tidak perlu membuat Git branch
-secara otomatis di aplikasi: kandidat membuat branch melalui workflow Git-nya sendiri.
+metadata artifact mengalahkan versi default tersebut. Branch dan perubahan fitur disiapkan
+penguji. Kandidat berfokus pada pipeline, deployment, dan rollback.
 
 Urutan build: install dependensi, test, build aset, stamp metadata, package. Dependensi
 runtime dapat dipasang dengan `composer install --no-dev --prefer-dist --optimize-autoloader`.
@@ -110,8 +110,9 @@ commit/build yang dikembalikan `/version` terhadap artifact yang dipilih.
 ## Latihan feature, gagal test, dan rollback
 
 1. Baseline: deploy versi `1.0.0`, daftar akun, dan simpan catatan di `/deployment`.
-2. Buat `feature/banner`. Ubah `version` menjadi `1.1.0` dan `message` di
-   `config/release.php`. Jalankan test, ajukan PR/MR ke `qa`, lalu promosikan ke `master`.
+2. Penguji menyiapkan perubahan di `feature/banner` atau rilis `1.1.0` pada `qa-master`.
+   Perubahan mencakup pesan rilis dan ringkasan total catatan pengguna di `/deployment`.
+   Jalankan test dan pipeline QA, lalu promosikan ke `master`.
    Dashboard harus menampilkan pesan/versi baru beserta branch/commit/build yang sesuai.
 3. Gagal CI: pada branch latihan, ubah versi menjadi `invalid`. Test validasi versi
    harus gagal dan tidak boleh ada deployment. Kembalikan perubahan sebelum melanjutkan.
@@ -134,6 +135,7 @@ sudah memiliki migration catatan.
 ```sh
 composer validate --strict
 composer check-platform-reqs
+php artisan config:clear
 php artisan test
 npm run build
 ```

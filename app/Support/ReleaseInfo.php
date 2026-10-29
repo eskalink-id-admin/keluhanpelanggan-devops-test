@@ -9,7 +9,7 @@ class ReleaseInfo
         $branch = config('release.branch');
         $target = match (true) {
             $branch === 'master' => 'production',
-            $branch === 'qa' => 'qa',
+            in_array($branch, ['qa', 'qa-master'], true) => 'qa',
             str_starts_with($branch, 'feature/') => 'preview',
             default => 'local',
         };

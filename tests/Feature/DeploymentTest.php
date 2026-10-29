@@ -37,6 +37,8 @@ class DeploymentTest extends TestCase
 
         config(['release.branch' => 'qa']);
         $this->getJson('/version')->assertJsonPath('branch_target', 'qa');
+        config(['release.branch' => 'qa-master']);
+        $this->getJson('/version')->assertJsonPath('branch_target', 'qa');
         config(['release.branch' => 'feature/release-banner']);
         $this->getJson('/version')->assertJsonPath('branch_target', 'preview');
     }
@@ -94,6 +96,32 @@ class DeploymentTest extends TestCase
         $this->delete('/deployment/notes/'.$id)->assertForbidden();
         $this->actingAs($owner)->delete('/deployment/notes/'.$id)->assertRedirect('/deployment');
         $this->assertDatabaseCount('deployment_notes', 0);
+    }
+
+    public function test_summary_counts_all_owned_notes_across_pages(): void
+    {
+        $this->withoutVite();
+        $owner = User::factory()->create();
+        $other = User::factory()->create();
+
+        foreach ([$owner->id => 12, $other->id => 3] as $userId => $count) {
+            for ($i = 1; $i <= $count; $i++) {
+                DB::table('deployment_notes')->insert([
+                    'user_id' => $userId,
+                    'body' => 'Catatan '.$i,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
+
+        $this->actingAs($owner)->get('/deployment')->assertOk()
+            ->assertSee('Ringkasan catatan')
+            ->assertSee('<strong>12</strong> catatan tersimpan', false)
+            ->assertViewHas('notes', fn ($notes) => $notes->total() === 12 && $notes->count() === 10);
+
+        $this->actingAs($other)->get('/deployment')->assertOk()
+            ->assertSee('<strong>3</strong> catatan tersimpan', false);
     }
 
     public function test_notes_validate_length_and_escape_html(): void
